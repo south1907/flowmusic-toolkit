@@ -1,109 +1,111 @@
 # Google Flow Music Local API
 
-Project độc lập cung cấp REST API để tạo nhạc bằng chính account đang đăng
-nhập tại [flowmusic.app](https://www.flowmusic.app/). Không cần
-`FLOWMUSIC_API_TOKEN`, không nhập Google password vào server và không lưu cookie
-trong SQLite.
+**English** | [Tiếng Việt](README.vi.md)
 
-> Flow Music hiện không công bố REST API ổn định cho luồng này. Project gọi các
-> route web first-party ` /__api/... ` qua tab Chrome đang đăng nhập; khi Flow
-> Music thay đổi frontend, adapter có thể cần cập nhật. Việc sử dụng account và
-> credits vẫn tuân theo điều khoản của Flow Music.
+A standalone REST API that generates music with the account currently signed
+in at [flowmusic.app](https://www.flowmusic.app/). It does not require a
+`FLOWMUSIC_API_TOKEN`, ask for your Google password, or store browser cookies in
+SQLite.
 
-## Kiến trúc
+> Flow Music does not currently publish a stable REST API for this workflow.
+> This project calls first-party `/__api/...` web routes through a signed-in
+> Chrome tab. The adapter may need to be updated when the Flow Music frontend
+> changes. Account and credit usage remain subject to the Flow Music terms.
+
+## Architecture
 
 ```text
 API client -> FastAPI :8123 -> WebSocket -> Chrome extension
                                             |
                                             v
-                              flowmusic.app tab đã đăng nhập
+                                  signed-in flowmusic.app tab
                                             |
                                             v
-                              first-party /__api requests
+                                  first-party /__api requests
 ```
 
-- FastAPI chỉ gửi path, method và payload cho extension.
-- Extension chạy `fetch` trong page context của `flowmusic.app`.
-- Supabase session, cookie và bearer token chỉ được sử dụng bên trong tab; chúng
-  không được gửi về Python.
-- Job được lưu cục bộ tại `data/google-flow-music.db`.
+- FastAPI sends only the request path, method, and payload to the extension.
+- The extension runs `fetch` in the `flowmusic.app` page context.
+- The Supabase session, cookies, and bearer token are used only inside the tab;
+  they are never sent to Python.
+- Jobs are stored locally in `data/google-flow-music.db`.
 
-## Cài đặt
+## Installation
 
-Yêu cầu Python 3.9+ và Chrome/Chromium.
+Python 3.9+ and Chrome/Chromium are required.
 
 ```bash
-cd /Users/heva/Desktop/work/google-flow-music
+cd google-flow-music
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m app
 ```
 
-Sau khi cài đặt, có thể dùng console command tương đương:
+The equivalent console command is also installed:
 
 ```bash
 google-flow-music
 ```
 
-API chạy tại `http://127.0.0.1:8123`; Swagger UI ở
+The API runs at `http://127.0.0.1:8123`. Swagger UI is available at
 `http://127.0.0.1:8123/docs`.
 
-### Cài Chrome extension
+### Install the Chrome extension
 
-1. Mở `chrome://extensions`.
-2. Bật **Developer mode**.
-3. Chọn **Load unpacked** và trỏ tới folder
-   `/Users/heva/Desktop/work/google-flow-music/extension`.
-4. Mở `https://www.flowmusic.app/` trong cùng Chrome profile và đăng nhập.
-5. Bấm icon extension; cả **Local API** và **Flow Music tab** phải xanh.
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Select **Load unpacked** and choose this project's `extension/` directory.
+4. Open `https://www.flowmusic.app/` in the same Chrome profile and sign in.
+5. Select the extension icon. Both **Local API** and **Flow Music tab** should
+   be green.
 
-Kiểm tra từ terminal:
+Check the connection from a terminal:
 
 ```bash
 curl http://127.0.0.1:8123/api/status
 ```
 
-## Tạo nhạc
+## Generate music
 
 ```bash
 curl -X POST http://127.0.0.1:8123/api/generate \
   -H 'Content-Type: application/json' \
   -d '{
-    "prompt": "Create a song titled Mưa trên mái hiên. Vietnamese indie folk, acoustic guitar, soft female vocal, 82 bpm. Use these lyrics exactly:\n[Verse]\nMưa rơi trên mái hiên\n[Chorus]\nTa đi qua những ngày dịu êm"
+    "prompt": "Create a song titled Rain on the Window. Indie folk, acoustic guitar, soft female vocal, 82 bpm. Use these lyrics exactly:\n[Verse]\nRain falls on the window\n[Chorus]\nWe walk through gentler days"
   }'
 ```
 
-API không có field `title`, `lyrics`, `instrumental` hay `project_id`. Flow Music
-nhận một chuỗi hội thoại duy nhất, vì vậy mọi yêu cầu nội dung phải nằm trong
-`prompt`, ví dụ:
+The API does not accept separate `title`, `lyrics`, `instrumental`, or
+`project_id` fields. Flow Music receives one conversation string, so all content
+instructions belong in `prompt`, for example:
 
 ```text
-Create a song titled "Mưa trên mái hiên".
-Style: Vietnamese indie folk, acoustic guitar, 82 bpm.
+Create a song titled "Rain on the Window".
+Style: indie folk, acoustic guitar, 82 bpm.
 Instrumental only; no vocals.
 
-Hoặc nếu có lời:
+Or, for a song with lyrics:
 Use these lyrics exactly:
 [Verse]
-Mưa rơi trên mái hiên
+Rain falls on the window
 ```
 
-Response trả `id` cục bộ. Poll job:
+The response contains a local job `id`. Poll it with:
 
 ```bash
 curl http://127.0.0.1:8123/api/jobs/JOB_ID
 ```
 
-Flow Music mặc định tạo hai biến thể cho mỗi prompt. API chờ cả hai operation và
-trả cả hai phần tử trong `clips`, mỗi phần tử có link M4A và WAV riêng.
-Số lượng mong đợi mặc định là `FLOWMUSIC_EXPECTED_CLIPS=2` và có thể đổi qua
-biến môi trường nếu hành vi của Flow Music thay đổi.
+Flow Music normally creates two variants for each prompt. The API tracks both
+operations and returns two entries in `clips`, each with separate M4A and WAV
+download links. The expected count defaults to `FLOWMUSIC_EXPECTED_CLIPS=2` and
+can be changed through the environment if Flow Music changes its behavior.
 
-### Chờ hoàn thành ngay trong request tạo nhạc
+### Wait for completion in the generate request
 
-Thêm `"wait": true` để `POST /api/generate` chỉ trả về sau khi Flow Music hoàn
-thành. `wait_timeout_s` là tùy chọn, từ 10 đến 3600 giây; mặc định lấy từ
+Add `"wait": true` to keep `POST /api/generate` open until Flow Music finishes.
+`wait_timeout_s` is optional, accepts 10–3600 seconds, and defaults to
 `FLOWMUSIC_POLL_TIMEOUT`:
 
 ```bash
@@ -116,27 +118,29 @@ curl -X POST http://127.0.0.1:8123/api/generate \
   }'
 ```
 
-API trả HTTP `200` khi đã hoàn tất. Nếu hết thời gian chờ nhưng Flow Music vẫn
-đang xử lý, API trả HTTP `202` cùng `id` và trạng thái `pending`; generation vẫn
-tiếp tục và có thể kiểm tra lại bằng endpoint job.
+The API returns HTTP `200` when generation completes. If the wait limit expires
+while Flow Music is still processing, it returns HTTP `202` with the local `id`
+and `pending` status. Generation continues and can be checked through the job
+endpoint.
 
-Khi hoàn tất, `download_url` và `wav_download_url` là URL đầy đủ theo host của
-request, ví dụ `http://127.0.0.1:8123/api/jobs/.../download?...`.
+Completed jobs contain absolute `download_url` and `wav_download_url` values
+based on the request host, for example
+`http://127.0.0.1:8123/api/jobs/.../download?...`.
 
-Với job đã tạo, có thể chờ đến khi hoàn thành bằng:
+To wait for an existing job:
 
 ```bash
 curl -X POST 'http://127.0.0.1:8123/api/jobs/JOB_ID/poll?timeout_s=1200'
 ```
 
-Download clip đầu tiên:
+Download the first clip:
 
 ```bash
 curl 'http://127.0.0.1:8123/api/jobs/JOB_ID/download?format=m4a' -o song.m4a
 curl 'http://127.0.0.1:8123/api/jobs/JOB_ID/download?format=wav' -o song.wav
 ```
 
-Các endpoint chính:
+Main endpoints:
 
 - `GET /health`
 - `GET /api/status`
@@ -146,20 +150,22 @@ Các endpoint chính:
 - `POST /api/jobs/{id}/poll`
 - `GET /api/jobs/{id}/download?format=m4a|wav`
 
-## Test
+## Testing and development
 
 ```bash
 pip install -r requirements-dev.txt
 make check
 ```
 
-Các lệnh phát triển chuẩn:
+Development commands:
 
-- `make install-dev` — tạo virtualenv và cài project cùng dev tools.
-- `make run` — chạy API.
-- `make format` — format và tự sửa lint an toàn.
-- `make check` — chạy lint JavaScript/Python, kiểm tra manifest và toàn bộ test.
+- `make install-dev` — create the virtual environment and install development
+  dependencies.
+- `make run` — start the API.
+- `make format` — format Python and apply safe lint fixes.
+- `make check` — lint Python/JavaScript, validate the extension manifest, and
+  run the test suite.
 
 ## License
 
-Phát hành theo [MIT License](LICENSE).
+Released under the [MIT License](LICENSE).
