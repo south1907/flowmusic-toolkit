@@ -6,7 +6,6 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 

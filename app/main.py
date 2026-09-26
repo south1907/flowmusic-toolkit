@@ -9,8 +9,7 @@ from typing import Any, Optional
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 
-from app import __version__
-from app import db
+from app import __version__, db
 from app.bridge import bridge
 from app.config import settings
 from app.flowmusic import FlowMusicError, client
@@ -84,7 +83,9 @@ async def _sync(
         row["id"],
         status=status if status in {"pending", "completed", "failed"} else "pending",
         result=result,
-        error_message=json.dumps(result.get("error"), ensure_ascii=False) if result.get("error") else None,
+        error_message=json.dumps(result.get("error"), ensure_ascii=False)
+        if result.get("error")
+        else None,
     )
     return _result_from_row(updated or row, result, base_url)
 
@@ -174,10 +175,7 @@ async def jobs(
     offset: int = Query(default=0, ge=0),
 ):
     base_url = str(request.base_url).rstrip("/")
-    return [
-        _result_from_row(row, base_url=base_url)
-        for row in await db.list_jobs(limit, offset)
-    ]
+    return [_result_from_row(row, base_url=base_url) for row in await db.list_jobs(limit, offset)]
 
 
 @app.get("/api/jobs/{job_id}", response_model=MusicJobResponse)
@@ -187,9 +185,7 @@ async def get_job(job_id: str, request: Request, refresh: bool = True):
     if row is None:
         raise HTTPException(404, "Job not found")
     has_all_clips = _stored_clip_count(row) >= settings.expected_clips
-    if not refresh or row["status"] == "failed" or (
-        row["status"] == "completed" and has_all_clips
-    ):
+    if not refresh or row["status"] == "failed" or (row["status"] == "completed" and has_all_clips):
         return _result_from_row(row, base_url=base_url)
     try:
         return await _sync(
@@ -212,9 +208,7 @@ async def poll_job(
     if row is None:
         raise HTTPException(404, "Job not found")
     has_all_clips = _stored_clip_count(row) >= settings.expected_clips
-    if row["status"] == "failed" or (
-        row["status"] == "completed" and has_all_clips
-    ):
+    if row["status"] == "failed" or (row["status"] == "completed" and has_all_clips):
         return _result_from_row(row, base_url=base_url)
     try:
         return await _sync(

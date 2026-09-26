@@ -2,8 +2,7 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from app import db
-from app import main
+from app import db, main
 from app.flowmusic import FlowMusicError
 
 
@@ -21,11 +20,13 @@ class CompletedClient:
         return {
             "status": "completed",
             "progress": 100,
-            "clips": [{
-                "id": "clip-1",
-                "download_url": "/api/jobs/{job_id}/download?clip_id=clip-1&format=m4a",
-                "wav_download_url": "/api/jobs/{job_id}/download?clip_id=clip-1&format=wav",
-            }],
+            "clips": [
+                {
+                    "id": "clip-1",
+                    "download_url": "/api/jobs/{job_id}/download?clip_id=clip-1&format=m4a",
+                    "wav_download_url": "/api/jobs/{job_id}/download?clip_id=clip-1&format=wav",
+                }
+            ],
         }
 
 
@@ -52,12 +53,8 @@ def test_generate_wait_returns_completed_with_http_200(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert response.json()["status"] == "completed"
     assert response.json()["clips"][0]["id"] == "clip-1"
-    assert response.json()["clips"][0]["download_url"].startswith(
-        "http://testserver/api/jobs/"
-    )
-    assert response.json()["clips"][0]["wav_download_url"].startswith(
-        "http://testserver/api/jobs/"
-    )
+    assert response.json()["clips"][0]["download_url"].startswith("http://testserver/api/jobs/")
+    assert response.json()["clips"][0]["wav_download_url"].startswith("http://testserver/api/jobs/")
 
 
 def test_generate_wait_timeout_returns_pending_job_with_http_202(tmp_path, monkeypatch):

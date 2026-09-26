@@ -82,12 +82,14 @@ class BrowserBridge:
         self._pending[request_id] = future
         try:
             async with self._send_lock:
-                await socket.send_json({
-                    "type": "request",
-                    "id": request_id,
-                    "action": "flowmusic_fetch",
-                    "payload": payload,
-                })
+                await socket.send_json(
+                    {
+                        "type": "request",
+                        "id": request_id,
+                        "action": "flowmusic_fetch",
+                        "payload": payload,
+                    }
+                )
             return await asyncio.wait_for(future, timeout=timeout)
         except asyncio.TimeoutError as exc:
             raise BridgeUnavailable(f"Browser request timed out after {timeout:g}s") from exc
@@ -96,4 +98,3 @@ class BrowserBridge:
 
 
 bridge = BrowserBridge()
-

@@ -10,7 +10,6 @@ import aiosqlite
 
 from app.config import settings
 
-
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS music_job (
     id              TEXT PRIMARY KEY,
@@ -40,7 +39,9 @@ def _row(row: Optional[aiosqlite.Row]) -> Optional[dict[str, Any]]:
     return dict(row) if row is not None else None
 
 
-async def create_job(provider_job_id: str, project_id: Optional[str], request: dict[str, Any]) -> dict[str, Any]:
+async def create_job(
+    provider_job_id: str, project_id: Optional[str], request: dict[str, Any]
+) -> dict[str, Any]:
     job_id = str(uuid.uuid4())
     async with aiosqlite.connect(settings.database_path) as db:
         db.row_factory = aiosqlite.Row
@@ -95,4 +96,3 @@ async def update_job(
         await db.commit()
         cursor = await db.execute("SELECT * FROM music_job WHERE id = ?", (job_id,))
         return _row(await cursor.fetchone())
-

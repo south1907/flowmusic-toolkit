@@ -40,6 +40,12 @@ pip install -r requirements.txt
 python -m app
 ```
 
+Sau khi cài đặt, có thể dùng console command tương đương:
+
+```bash
+google-flow-music
+```
+
 API chạy tại `http://127.0.0.1:8123`; Swagger UI ở
 `http://127.0.0.1:8123/docs`.
 
@@ -144,6 +150,16 @@ Các endpoint chính:
 
 ```bash
 pip install -r requirements-dev.txt
-pytest
-node --check extension/background.js
+make check
 ```
+
+Các lệnh phát triển chuẩn:
+
+- `make install-dev` — tạo virtualenv và cài project cùng dev tools.
+- `make run` — chạy API.
+- `make format` — format và tự sửa lint an toàn.
+- `make check` — chạy lint JavaScript/Python, kiểm tra manifest và toàn bộ test.
+
+## License
+
+Phát hành theo [MIT License](LICENSE).

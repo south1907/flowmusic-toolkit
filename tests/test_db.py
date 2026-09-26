@@ -21,4 +21,3 @@ async def test_job_lifecycle(tmp_path, monkeypatch):
     assert updated["status"] == "completed"
     assert (await db.get_job(created["id"]))["provider_job_id"] == "provider-job-1"
     assert len(await db.list_jobs()) == 1
-

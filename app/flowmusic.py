@@ -77,10 +77,12 @@ def parse_sse(stream: str, job_id: str = "") -> dict[str, Any]:
                     result["operation_id"] = operation_id
                     if operation_id not in result["operation_ids"]:
                         result["operation_ids"].append(operation_id)
-                        result["operations"].append({
-                            "operation_id": operation_id,
-                            "clip_id": clip_id,
-                        })
+                        result["operations"].append(
+                            {
+                                "operation_id": operation_id,
+                                "clip_id": clip_id,
+                            }
+                        )
                     elif clip_id:
                         for operation in result["operations"]:
                             if operation["operation_id"] == operation_id:
@@ -91,10 +93,12 @@ def parse_sse(stream: str, job_id: str = "") -> dict[str, Any]:
                     if clip_id not in result["clip_ids"]:
                         result["clip_ids"].append(clip_id)
                     if not operation_id:
-                        result["operations"].append({
-                            "operation_id": None,
-                            "clip_id": clip_id,
-                        })
+                        result["operations"].append(
+                            {
+                                "operation_id": None,
+                                "clip_id": clip_id,
+                            }
+                        )
     return result
 
 
@@ -236,11 +240,13 @@ class FlowMusicClient:
             if isinstance(operation.get("progress"), (int, float)):
                 progress_values.append(float(operation["progress"]))
             if provider_status in failed_states:
-                errors.append({
-                    "operation_id": operation_id,
-                    "code": operation.get("error_type") or "generation_failed",
-                    "message": operation.get("error_message") or "Flow Music generation failed",
-                })
+                errors.append(
+                    {
+                        "operation_id": operation_id,
+                        "code": operation.get("error_type") or "generation_failed",
+                        "message": operation.get("error_message") or "Flow Music generation failed",
+                    }
+                )
 
         terminal_states = completed_states | failed_states
         all_terminal = len(operation_ids) >= settings.expected_clips and all(
@@ -250,12 +256,17 @@ class FlowMusicClient:
         any_pending = any(item["status"] not in terminal_states for item in statuses)
         failed = all_terminal and not clip_ids and bool(errors)
         completed = enough_clips or (all_terminal and bool(clip_ids) and not any_pending)
-        clips = [{
-            "id": clip_id,
-            "download_url": f"/api/jobs/{{job_id}}/download?clip_id={quote(clip_id, safe='')}&format=m4a",
-            "wav_download_url": f"/api/jobs/{{job_id}}/download?clip_id={quote(clip_id, safe='')}&format=wav",
-            "duration_s": duration_by_clip.get(clip_id),
-        } for clip_id in clip_ids]
+        clips = []
+        for clip_id in clip_ids:
+            download_path = f"/api/jobs/{{job_id}}/download?clip_id={quote(clip_id, safe='')}"
+            clips.append(
+                {
+                    "id": clip_id,
+                    "download_url": f"{download_path}&format=m4a",
+                    "wav_download_url": f"{download_path}&format=wav",
+                    "duration_s": duration_by_clip.get(clip_id),
+                }
+            )
         return {
             "status": "failed" if failed else "completed" if completed else "pending",
             "operation_ids": operation_ids,

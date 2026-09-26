@@ -47,9 +47,7 @@ def test_parse_sse_extracts_ids():
 async def test_generate_and_get_job():
     fake = FakeBridge()
     client = FlowMusicClient(fake)
-    created = await client.generate(
-        prompt='Create a song titled "Mưa". Vietnamese indie folk.'
-    )
+    created = await client.generate(prompt='Create a song titled "Mưa". Vietnamese indie folk.')
     assert created["provider_job_id"] == "job-1"
     assert created["project_id"] == "project-1"
     project_body = fake.calls[0][0]["body"]
