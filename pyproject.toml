@@ -1,0 +1,10 @@
+[project]
+name = "google-flow-music"
+version = "0.1.0"
+description = "Local API for Flow Music using the user's signed-in Chrome session"
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+

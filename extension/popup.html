@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flow Music Bridge</title>
+    <style>
+      body { width: 280px; margin: 0; padding: 18px; font: 14px/1.45 system-ui, sans-serif; color: #202124; }
+      h1 { margin: 0 0 14px; font-size: 17px; }
+      .row { display: flex; justify-content: space-between; margin: 9px 0; }
+      .value { font-weight: 650; }
+      .ok { color: #188038; } .bad { color: #b3261e; } .muted { color: #5f6368; }
+      button { width: 100%; margin-top: 10px; padding: 9px; border: 0; border-radius: 8px; cursor: pointer; }
+      #open { background: #1a73e8; color: white; } #retry { background: #f1f3f4; color: #202124; }
+      #error { margin-top: 10px; font-size: 12px; overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body>
+    <h1>Flow Music Local Bridge</h1>
+    <div class="row"><span>Local API</span><span id="agent" class="value muted">Checking…</span></div>
+    <div class="row"><span>Flow Music tab</span><span id="tab" class="value muted">Checking…</span></div>
+    <button id="open">Open Flow Music</button>
+    <button id="retry">Reconnect</button>
+    <div id="error" class="bad"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>
+

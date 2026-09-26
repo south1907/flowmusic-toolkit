@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Google Flow Music Local Bridge",
+  "version": "0.1.0",
+  "description": "Runs Flow Music requests inside your signed-in browser tab for the local API.",
+  "permissions": [
+    "alarms",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.flowmusic.app/*",
+    "http://127.0.0.1:8123/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Flow Music Local Bridge",
+    "default_popup": "popup.html"
+  }
+}
