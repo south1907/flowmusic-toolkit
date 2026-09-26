@@ -1,4 +1,4 @@
-# Google Flow Music Local API
+# Unofficial Flow Music Local API
 
 **English** | [Tiếng Việt](README.vi.md)
 
@@ -10,6 +10,11 @@ A standalone REST API that generates music with the account currently signed
 in at [flowmusic.app](https://www.flowmusic.app/). It does not require a
 `FLOWMUSIC_API_TOKEN`, ask for your Google password, or store browser cookies in
 SQLite.
+
+> **Unofficial project:** This project is not affiliated with, endorsed by, or
+> sponsored by Google or Flow Music. It does not provide or resell Flow Music
+> accounts, credits, or access. See the [Disclaimer](DISCLAIMER.md) and
+> [Privacy Policy](PRIVACY.md).
 
 > Flow Music does not currently publish a stable REST API for this workflow.
 > This project calls first-party `/__api/...` web routes through a signed-in
@@ -215,6 +220,33 @@ make github-setup
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
+## Responsible use
+
+Use this project only with an account you are authorized to use and in
+compliance with the applicable Google and Flow Music terms, policies, limits,
+and laws.
+
+- Do not resell, share, sublicense, or provide third-party access to Flow Music
+  through this project.
+- Do not bypass quotas, rate limits, CAPTCHAs, safety systems, access controls,
+  or other protective measures.
+- Do not use account farming or automate abusive, deceptive, or unlawful
+  activity.
+- Make sure you have the necessary rights to prompts, lyrics, reference
+  material, generated audio, and anything you publish or distribute.
+- Clearly disclose AI-generated content where required; do not imply that this
+  project or its output is officially provided or endorsed by Google.
+- Keep the API on a trusted local machine and monitor account credit usage.
+
+You are solely responsible for your account, credits, prompts, generated
+content, downloads, and use of the resulting audio. Review the full
+[Disclaimer](DISCLAIMER.md), [Privacy Policy](PRIVACY.md),
+[Google Terms of Service](https://policies.google.com/terms), and Google's
+[Generative AI Prohibited Use Policy](https://policies.google.com/terms/generative-ai/use-policy)
+before use.
+
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE). The license covers this repository's
+code only; it does not grant rights to Google or Flow Music services,
+interfaces, trademarks, accounts, credits, or third-party content.

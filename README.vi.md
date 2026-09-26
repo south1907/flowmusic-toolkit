@@ -1,4 +1,4 @@
-# Google Flow Music Local API
+# Unofficial Flow Music Local API
 
 [English](README.md) | **Tiếng Việt**
 
@@ -10,6 +10,11 @@ Project độc lập cung cấp REST API để tạo nhạc bằng chính tài k
 nhập tại [flowmusic.app](https://www.flowmusic.app/). Không cần
 `FLOWMUSIC_API_TOKEN`, không nhập mật khẩu Google vào server và không lưu cookie
 trong SQLite.
+
+> **Dự án không chính thức:** Project không liên kết, không được xác nhận hay
+> tài trợ bởi Google hoặc Flow Music. Project không cung cấp hoặc bán lại tài
+> khoản, credits hay quyền truy cập Flow Music. Xem [Tuyên bố miễn trừ](DISCLAIMER.md)
+> và [Chính sách riêng tư](PRIVACY.md).
 
 > Flow Music hiện không công bố REST API ổn định cho luồng này. Project gọi các
 > route web first-party `/__api/...` qua tab Chrome đang đăng nhập; khi Flow
@@ -210,6 +215,32 @@ make github-setup
 
 Đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi mở pull request.
 
+## Sử dụng có trách nhiệm
+
+Chỉ sử dụng project với tài khoản mà bạn có quyền sử dụng và tuân thủ các điều
+khoản, chính sách, giới hạn của Google/Flow Music cùng pháp luật áp dụng.
+
+- Không bán lại, chia sẻ, cấp phép lại hoặc cung cấp quyền truy cập Flow Music
+  cho bên thứ ba thông qua project này.
+- Không vượt qua quota, rate limit, CAPTCHA, hệ thống an toàn, kiểm soát truy
+  cập hoặc biện pháp bảo vệ khác.
+- Không account farming và không tự động hóa hoạt động lạm dụng, lừa đảo hoặc
+  trái pháp luật.
+- Bảo đảm bạn có đầy đủ quyền đối với prompt, lời bài hát, tài liệu tham chiếu,
+  nhạc được tạo và mọi nội dung được xuất bản hoặc phân phối.
+- Công bố nội dung do AI tạo khi cần thiết; không tạo ấn tượng rằng project hay
+  kết quả của nó được Google chính thức cung cấp hoặc xác nhận.
+- Chỉ chạy API trên máy cục bộ đáng tin cậy và theo dõi credits của tài khoản.
+
+Bạn tự chịu trách nhiệm hoàn toàn đối với tài khoản, credits, prompt, nội dung
+được tạo, file tải xuống và cách sử dụng nhạc. Hãy đọc đầy đủ
+[Tuyên bố miễn trừ](DISCLAIMER.md), [Chính sách riêng tư](PRIVACY.md),
+[Điều khoản dịch vụ Google](https://policies.google.com/terms) và
+[Chính sách về hành vi bị cấm khi sử dụng AI tạo sinh](https://policies.google.com/terms/generative-ai/use-policy)
+trước khi sử dụng.
+
 ## Giấy phép
 
-Phát hành theo [MIT License](LICENSE).
+Phát hành theo [MIT License](LICENSE). Giấy phép chỉ áp dụng cho mã nguồn trong
+repository này; không cấp quyền đối với dịch vụ, giao diện, thương hiệu, tài
+khoản, credits của Google/Flow Music hoặc nội dung của bên thứ ba.

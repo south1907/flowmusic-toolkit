@@ -1,4 +1,4 @@
-"""FastAPI entry point for the standalone Google Flow Music service."""
+"""FastAPI entry point for the unofficial standalone Flow Music service."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="Google Flow Music Local API",
+    title="Unofficial Flow Music Local API",
     version=__version__,
     description="Generate music through the user's signed-in flowmusic.app browser session.",
     lifespan=lifespan,

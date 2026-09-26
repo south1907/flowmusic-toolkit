@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to Google Flow Music Local API.
+Thank you for contributing to the Unofficial Flow Music Local API.
 
 ## Development setup
 
@@ -25,4 +25,3 @@ tests for new behavior or bug fixes.
 
 Use the bug-report form and provide sanitized logs, your operating system,
 Python version, and Chrome version. Never include credentials or session data.
-

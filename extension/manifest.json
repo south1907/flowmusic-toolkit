@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Google Flow Music Local Bridge",
+  "name": "Unofficial Flow Music Local Bridge",
   "version": "0.1.0",
   "description": "Runs Flow Music requests inside your signed-in browser tab for the local API.",
   "permissions": [
