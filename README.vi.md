@@ -2,6 +2,10 @@
 
 [English](README.md) | **Tiếng Việt**
 
+[![CI](https://github.com/south1907/flowmusic-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/south1907/flowmusic-toolkit/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Project độc lập cung cấp REST API để tạo nhạc bằng chính tài khoản đang đăng
 nhập tại [flowmusic.app](https://www.flowmusic.app/). Không cần
 `FLOWMUSIC_API_TOKEN`, không nhập mật khẩu Google vào server và không lưu cookie
@@ -11,6 +15,15 @@ trong SQLite.
 > route web first-party `/__api/...` qua tab Chrome đang đăng nhập; khi Flow
 > Music thay đổi frontend, adapter có thể cần cập nhật. Việc sử dụng tài khoản
 > và credits vẫn tuân theo điều khoản của Flow Music.
+
+## Tính năng
+
+- API tạo nhạc chỉ cần prompt, có tùy chọn chờ đồng bộ.
+- Theo dõi cả hai biến thể của Flow Music và trả link M4A/WAV đầy đủ.
+- Dùng tài khoản và credits từ Chrome session đã đăng nhập.
+- Giữ thông tin xác thực bên trong page context của Flow Music.
+- Lưu trạng thái generation cục bộ bằng SQLite.
+- Có OpenAPI docs, tests, lint và GitHub CI workflow.
 
 ## Kiến trúc
 
@@ -30,16 +43,23 @@ API client -> FastAPI :8123 -> WebSocket -> Chrome extension
   chúng không được gửi về Python.
 - Job được lưu cục bộ tại `data/google-flow-music.db`.
 
-## Cài đặt
+## Khởi động nhanh
 
 Yêu cầu Python 3.9+ và Chrome/Chromium.
 
 ```bash
-cd google-flow-music
+git clone https://github.com/south1907/flowmusic-toolkit.git
+cd flowmusic-toolkit
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m app
+```
+
+Trên Windows PowerShell, kích hoạt môi trường bằng:
+
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
 Sau khi cài đặt, có thể dùng console command tương đương:
@@ -64,6 +84,23 @@ Kiểm tra từ terminal:
 ```bash
 curl http://127.0.0.1:8123/api/status
 ```
+
+## Cấu hình
+
+Project đọc cấu hình từ các biến môi trường:
+
+| Biến | Mặc định | Mô tả |
+|---|---:|---|
+| `HOST` | `127.0.0.1` | Địa chỉ bind của API |
+| `PORT` | `8123` | Port API và WebSocket của extension |
+| `DATABASE_PATH` | `data/google-flow-music.db` | Database SQLite cục bộ |
+| `FLOWMUSIC_REQUEST_TIMEOUT` | `90` | Timeout request trình duyệt, tính bằng giây |
+| `FLOWMUSIC_POLL_INTERVAL` | `5` | Khoảng cách giữa các lần kiểm tra trạng thái |
+| `FLOWMUSIC_POLL_TIMEOUT` | `900` | Thời gian chờ đồng bộ tối đa mặc định |
+| `FLOWMUSIC_EXPECTED_CLIPS` | `2` | Số biến thể mong đợi cho mỗi prompt |
+
+Chrome extension hiện kết nối tới port `8123`. Nếu đổi `PORT`, cần cập nhật cả
+`AGENT_WS_URL` và localhost permission trong folder `extension/`.
 
 ## Tạo nhạc
 
@@ -160,6 +197,18 @@ Các lệnh phát triển:
 - `make run` — chạy API.
 - `make format` — format và tự sửa lint an toàn.
 - `make check` — chạy lint JavaScript/Python, kiểm tra manifest và toàn bộ test.
+
+## Thiết lập repository GitHub
+
+Repository đã có issue forms, pull-request template, Dependabot và CI matrix cho
+Python. Để đồng bộ các topics và labels được đề xuất lên GitHub:
+
+```bash
+gh auth login
+make github-setup
+```
+
+Đọc [CONTRIBUTING.md](CONTRIBUTING.md) trước khi mở pull request.
 
 ## Giấy phép
 

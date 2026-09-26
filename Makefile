@@ -1,4 +1,4 @@
-.PHONY: install install-dev run test lint format check
+.PHONY: install install-dev run test lint format check github-setup
 
 install:
 	python3 -m venv .venv
@@ -27,3 +27,6 @@ format:
 	.venv/bin/ruff check --fix app tests
 
 check: lint test
+
+github-setup:
+	bash scripts/setup-github.sh

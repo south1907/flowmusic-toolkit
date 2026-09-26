@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a reproducible problem in the API or browser extension.
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Google Flow Music Local API.
+  - type: checkboxes
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed tokens, cookies, passwords, and other private data.
+          required: true
+  - type: input
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0 or a commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Affected component
+      options:
+        - API
+        - Chrome extension
+        - Flow Music integration
+        - Installation or tooling
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      placeholder: Describe the smallest sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Environment
+      description: Include OS, Python version, Chrome version, and relevant configuration.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Logs
+      description: Paste sanitized logs only. Never include browser sessions or credentials.
+      render: text
+

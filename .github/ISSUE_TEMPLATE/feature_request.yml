@@ -1,0 +1,40 @@
+name: Feature request
+description: Propose an improvement or a new capability.
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: checkboxes
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find the same request.
+          required: true
+  - type: textarea
+    attributes:
+      label: Problem
+      description: What limitation or workflow problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed solution
+      description: Describe the desired API or extension behavior.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    attributes:
+      label: Affected component
+      options:
+        - API
+        - Chrome extension
+        - Flow Music integration
+        - Installation or tooling
+        - Documentation
+    validations:
+      required: true
+

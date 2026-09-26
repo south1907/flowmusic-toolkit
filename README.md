@@ -2,6 +2,10 @@
 
 **English** | [Tiếng Việt](README.vi.md)
 
+[![CI](https://github.com/south1907/flowmusic-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/south1907/flowmusic-toolkit/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A standalone REST API that generates music with the account currently signed
 in at [flowmusic.app](https://www.flowmusic.app/). It does not require a
 `FLOWMUSIC_API_TOKEN`, ask for your Google password, or store browser cookies in
@@ -11,6 +15,15 @@ SQLite.
 > This project calls first-party `/__api/...` web routes through a signed-in
 > Chrome tab. The adapter may need to be updated when the Flow Music frontend
 > changes. Account and credit usage remain subject to the Flow Music terms.
+
+## Features
+
+- Prompt-only music generation API with optional synchronous waiting.
+- Tracks both Flow Music variants and returns absolute M4A and WAV links.
+- Uses the account and credits from an existing signed-in Chrome session.
+- Keeps browser credentials inside the Flow Music page context.
+- Persists local generation jobs in SQLite.
+- Includes OpenAPI documentation, tests, linting, and a GitHub CI workflow.
 
 ## Architecture
 
@@ -30,16 +43,23 @@ API client -> FastAPI :8123 -> WebSocket -> Chrome extension
   they are never sent to Python.
 - Jobs are stored locally in `data/google-flow-music.db`.
 
-## Installation
+## Quick start
 
 Python 3.9+ and Chrome/Chromium are required.
 
 ```bash
-cd google-flow-music
+git clone https://github.com/south1907/flowmusic-toolkit.git
+cd flowmusic-toolkit
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m app
+```
+
+On Windows PowerShell, activate the environment with:
+
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
 The equivalent console command is also installed:
@@ -65,6 +85,23 @@ Check the connection from a terminal:
 ```bash
 curl http://127.0.0.1:8123/api/status
 ```
+
+## Configuration
+
+Configuration is read from environment variables:
+
+| Variable | Default | Description |
+|---|---:|---|
+| `HOST` | `127.0.0.1` | API bind address |
+| `PORT` | `8123` | API and extension WebSocket port |
+| `DATABASE_PATH` | `data/google-flow-music.db` | Local SQLite database |
+| `FLOWMUSIC_REQUEST_TIMEOUT` | `90` | Browser request timeout in seconds |
+| `FLOWMUSIC_POLL_INTERVAL` | `5` | Seconds between status checks |
+| `FLOWMUSIC_POLL_TIMEOUT` | `900` | Default maximum synchronous wait |
+| `FLOWMUSIC_EXPECTED_CLIPS` | `2` | Expected variants for each prompt |
+
+The Chrome extension currently connects to port `8123`. If `PORT` changes,
+update `AGENT_WS_URL` and the localhost permission in `extension/` as well.
 
 ## Generate music
 
@@ -165,6 +202,18 @@ Development commands:
 - `make format` — format Python and apply safe lint fixes.
 - `make check` — lint Python/JavaScript, validate the extension manifest, and
   run the test suite.
+
+## GitHub repository setup
+
+The repository includes issue forms, a pull-request template, Dependabot, and a
+Python CI matrix. To synchronize the recommended repository topics and labels:
+
+```bash
+gh auth login
+make github-setup
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
