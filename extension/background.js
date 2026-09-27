@@ -65,6 +65,9 @@ function connect() {
 
 const allowedPaths = [
   /^\/__api\/projects$/,
+  /^\/__api\/projects\/[^/?]+\/clips\/ids$/,
+  /^\/__api\/projects\/[^/?]+\/conversations\/ids$/,
+  /^\/__api\/conversations\/[^/?]+\/transcript$/,
   /^\/__api\/conversation$/,
   /^\/__api\/messages\/[^/?]+\/stream\?last_id=\d+$/,
   /^\/__api\/audio-create-song-status\/[^/?]+$/,
@@ -85,22 +88,51 @@ async function getFlowMusicTab() {
   return tab;
 }
 
+async function reloadFlowMusicTab(tabId, timeoutMs = 15000) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+      resolve();
+    };
+    const onUpdated = (updatedTabId, changeInfo) => {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') finish();
+    };
+    const timer = setTimeout(finish, timeoutMs);
+    chrome.tabs.onUpdated.addListener(onUpdated);
+    chrome.tabs.reload(tabId).then(async () => {
+      const tab = await chrome.tabs.get(tabId).catch(() => null);
+      if (tab?.status === 'complete') finish();
+    }).catch(finish);
+  });
+}
+
 async function handleFlowMusicFetch(payload) {
-  const { path, method = 'GET', body = null, responseMode = 'json' } = payload;
+  const {
+    path,
+    method = 'GET',
+    body = null,
+    responseMode = 'json',
+    expectedOperations = 2,
+  } = payload;
   if (typeof path !== 'string' || !allowedPaths.some((pattern) => pattern.test(path))) {
     return { status: 400, error: 'UNSUPPORTED_FLOWMUSIC_PATH' };
   }
-  if (!['GET', 'POST'].includes(method) || !['json', 'text', 'base64'].includes(responseMode)) {
+  if (!['GET', 'POST'].includes(method) || !['json', 'text', 'sse', 'base64'].includes(responseMode)) {
     return { status: 400, error: 'INVALID_REQUEST_OPTIONS' };
   }
   try {
     const tab = await getFlowMusicTab();
     if (!tab?.id) return { status: 503, error: 'NO_FLOWMUSIC_TAB' };
-    const [execution] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: 'MAIN',
-      args: [path, method, body, responseMode],
-      func: async (requestPath, requestMethod, requestBody, mode) => {
+    const executeRequest = async () => {
+      const [execution] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        world: 'MAIN',
+        args: [path, method, body, responseMode, expectedOperations],
+        func: async (requestPath, requestMethod, requestBody, mode, operationTarget) => {
         const parseSession = (raw) => {
           if (!raw || typeof raw !== 'string') return null;
           const candidates = [raw, raw.replace(/^base64-/, '')];
@@ -112,8 +144,8 @@ async function handleFlowMusicFetch(payload) {
             const candidate = candidates[index];
             try {
               const value = JSON.parse(candidate);
-              if (value?.access_token) return value.access_token;
-              if (value?.currentSession?.access_token) return value.currentSession.access_token;
+              if (value?.access_token) return value;
+              if (value?.currentSession?.access_token) return value.currentSession;
             } catch {}
             try {
               const normalized = candidate.replace(/-/g, '+').replace(/_/g, '/');
@@ -124,38 +156,61 @@ async function handleFlowMusicFetch(payload) {
           return null;
         };
 
-        let accessToken = null;
+        const tokenExpiry = (token) => {
+          try {
+            const payload = token.split('.')[1];
+            const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+            const decoded = JSON.parse(atob(normalized));
+            return Number(decoded.exp) || 0;
+          } catch {
+            return 0;
+          }
+        };
+
+        const sessions = [];
         try {
           for (const key of Object.keys(localStorage)) {
             if (!key.includes('sb-') || !key.includes('auth-token')) continue;
-            accessToken = parseSession(localStorage.getItem(key));
-            if (accessToken) break;
+            const session = parseSession(localStorage.getItem(key));
+            if (session?.access_token) sessions.push(session);
           }
         } catch {}
 
-        if (!accessToken) {
-          try {
-            const groups = new Map();
-            for (const entry of document.cookie.split(';').map((value) => value.trim())) {
-              const separator = entry.indexOf('=');
-              if (separator < 0) continue;
-              const name = entry.slice(0, separator);
-              if (!name.includes('sb-') || !name.includes('auth-token')) continue;
-              const base = name.replace(/\.\d+$/, '');
-              const parts = groups.get(base) || [];
-              parts.push({ name, value: entry.slice(separator + 1) });
-              groups.set(base, parts);
-            }
-            for (const parts of groups.values()) {
-              parts.sort((a, b) => a.name.localeCompare(b.name));
-              accessToken = parseSession(parts.map((part) => part.value).join(''));
-              if (accessToken) break;
-            }
-          } catch {}
-        }
+        try {
+          const groups = new Map();
+          for (const entry of document.cookie.split(';').map((value) => value.trim())) {
+            const separator = entry.indexOf('=');
+            if (separator < 0) continue;
+            const name = entry.slice(0, separator);
+            if (!name.includes('sb-') || !name.includes('auth-token')) continue;
+            const base = name.replace(/\.\d+$/, '');
+            const parts = groups.get(base) || [];
+            const chunkMatch = name.match(/\.(\d+)$/);
+            parts.push({
+              index: chunkMatch ? Number(chunkMatch[1]) : -1,
+              value: entry.slice(separator + 1),
+            });
+            groups.set(base, parts);
+          }
+          for (const parts of groups.values()) {
+            parts.sort((a, b) => a.index - b.index);
+            const session = parseSession(parts.map((part) => part.value).join(''));
+            if (session?.access_token) sessions.push(session);
+          }
+        } catch {}
+
+        const now = Math.floor(Date.now() / 1000);
+        sessions.sort((a, b) => tokenExpiry(b.access_token) - tokenExpiry(a.access_token));
+        const session = sessions.find((item) => tokenExpiry(item.access_token) > now + 15)
+          || sessions[0];
+        const accessToken = session?.access_token || null;
 
         const headers = {
-          accept: mode === 'text' ? 'text/event-stream' : mode === 'base64' ? 'audio/*' : 'application/json',
+          accept: ['text', 'sse'].includes(mode)
+            ? 'text/event-stream'
+            : mode === 'base64'
+              ? 'audio/*'
+              : 'application/json',
         };
         if (accessToken) headers.authorization = `Bearer ${accessToken}`;
         if (requestBody !== null && requestMethod !== 'GET') {
@@ -183,13 +238,66 @@ async function handleFlowMusicFetch(payload) {
             },
           };
         }
+        if (mode === 'sse' && response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let snapshot = '';
+          const deadline = Date.now() + 30000;
+          const readWithTimeout = (timeoutMs) => new Promise((resolve, reject) => {
+            const timer = setTimeout(() => resolve({ timedOut: true }), timeoutMs);
+            reader.read().then(
+              (result) => {
+                clearTimeout(timer);
+                resolve({ timedOut: false, result });
+              },
+              (error) => {
+                clearTimeout(timer);
+                reject(error);
+              },
+            );
+          });
+          try {
+            while (Date.now() < deadline) {
+              const next = await readWithTimeout(Math.min(5000, deadline - Date.now()));
+              if (next.timedOut) break;
+              const { done, value } = next.result;
+              if (value) snapshot += decoder.decode(value, { stream: !done });
+              if (done && !/event:\s*(?:complete|final)\b/.test(snapshot)) {
+                snapshot += '\n\nevent: final\ndata: {}\n\n';
+              }
+
+              const operationIds = new Set();
+              const operationPattern = /"operation_id(?:_b)?"\s*:\s*"([^"]+)"/g;
+              for (const match of snapshot.matchAll(operationPattern)) operationIds.add(match[1]);
+              if (
+                operationIds.size >= Math.max(1, Number(operationTarget) || 2)
+                || /event:\s*(?:complete|final|error)\b/.test(snapshot)
+                || snapshot.includes('Stream not found')
+                || done
+              ) break;
+            }
+          } finally {
+            reader.cancel().catch(() => {});
+          }
+          return { status: response.status, data: snapshot };
+        }
         const text = await response.text();
         if (mode === 'text') return { status: response.status, data: text };
         try { return { status: response.status, data: JSON.parse(text) }; }
         catch { return { status: response.status, data: text }; }
-      },
-    });
-    return execution?.result || { status: 502, error: 'NO_BROWSER_RESULT' };
+        },
+      });
+      return execution?.result || { status: 502, error: 'NO_BROWSER_RESULT' };
+    };
+
+    let result = await executeRequest();
+    if ([401, 403].includes(Number(result?.status))) {
+      // Loading the first-party app invokes Supabase getSession(), which
+      // refreshes an expired access token using the browser's refresh token.
+      await reloadFlowMusicTab(tab.id);
+      result = await executeRequest();
+    }
+    return result;
   } catch (error) {
     return { status: 502, error: error?.message || 'FLOWMUSIC_BROWSER_REQUEST_FAILED' };
   }

@@ -11,7 +11,7 @@ install-dev:
 	.venv/bin/python -m pip install -e ".[dev]"
 
 run:
-	.venv/bin/google-flow-music
+	.venv/bin/python -m app
 
 test:
 	.venv/bin/python -m pytest

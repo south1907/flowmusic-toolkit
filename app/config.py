@@ -22,6 +22,7 @@ class Settings:
     request_timeout: float = float(os.environ.get("FLOWMUSIC_REQUEST_TIMEOUT", "90"))
     poll_interval: float = float(os.environ.get("FLOWMUSIC_POLL_INTERVAL", "5"))
     poll_timeout: float = float(os.environ.get("FLOWMUSIC_POLL_TIMEOUT", "900"))
+    auth_retry_limit: int = int(os.environ.get("FLOWMUSIC_AUTH_RETRY_LIMIT", "3"))
     expected_clips: int = int(os.environ.get("FLOWMUSIC_EXPECTED_CLIPS", "2"))
 
 

@@ -24,7 +24,7 @@ SQLite.
 ## Features
 
 - Prompt-only music generation API with optional synchronous waiting.
-- Tracks both Flow Music variants and returns absolute M4A and WAV links.
+- Tracks one or two Flow Music variants and returns absolute M4A and WAV links.
 - Uses the account and credits from an existing signed-in Chrome session.
 - Keeps browser credentials inside the Flow Music page context.
 - Persists local generation jobs in SQLite.
@@ -103,7 +103,8 @@ Configuration is read from environment variables:
 | `FLOWMUSIC_REQUEST_TIMEOUT` | `90` | Browser request timeout in seconds |
 | `FLOWMUSIC_POLL_INTERVAL` | `5` | Seconds between status checks |
 | `FLOWMUSIC_POLL_TIMEOUT` | `900` | Default maximum synchronous wait |
-| `FLOWMUSIC_EXPECTED_CLIPS` | `2` | Expected variants for each prompt |
+| `FLOWMUSIC_AUTH_RETRY_LIMIT` | `3` | Consecutive auth-refresh retries while polling |
+| `FLOWMUSIC_EXPECTED_CLIPS` | `2` | Maximum expected variants used for early completion |
 
 The Chrome extension currently connects to port `8123`. If `PORT` changes,
 update `AGENT_WS_URL` and the localhost permission in `extension/` as well.
@@ -139,10 +140,11 @@ The response contains a local job `id`. Poll it with:
 curl http://127.0.0.1:8123/api/jobs/JOB_ID
 ```
 
-Flow Music normally creates two variants for each prompt. The API tracks both
-operations and returns two entries in `clips`, each with separate M4A and WAV
-download links. The expected count defaults to `FLOWMUSIC_EXPECTED_CLIPS=2` and
-can be changed through the environment if Flow Music changes its behavior.
+Flow Music normally creates up to two variants for each prompt, but some
+requests produce only one. The API returns every generated variant in `clips`,
+each with separate M4A and WAV download links. It completes early when the
+expected count is reached, or when Flow Music finalizes the stream and every
+returned operation is terminal. `FLOWMUSIC_EXPECTED_CLIPS` defaults to `2`.
 
 ### Wait for completion in the generate request
 
@@ -191,6 +193,18 @@ Main endpoints:
 - `GET /api/jobs/{id}`
 - `POST /api/jobs/{id}/poll`
 - `GET /api/jobs/{id}/download?format=m4a|wav`
+
+## Troubleshooting authentication
+
+When Flow Music returns `401` or `403`, the bridge reloads the signed-in Flow
+Music tab once so the first-party app can refresh its access token, then retries
+the request. If the retry is still unauthorized, open that tab and sign in
+again; the refresh session itself has expired or been revoked.
+
+If Flow Music has already accepted a generation, a temporary authentication
+failure during synchronous polling returns the saved job as `202 pending`
+instead of failing the create request. Continue with `GET /api/jobs/{id}` or
+`POST /api/jobs/{id}/poll`.
 
 ## Testing and development
 

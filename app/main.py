@@ -73,6 +73,16 @@ def _stored_clip_count(row: dict[str, Any]) -> int:
         return 0
 
 
+def _stored_conversation_id(row: dict[str, Any]) -> Optional[str]:
+    if not row.get("result_json"):
+        return None
+    try:
+        value = (json.loads(row["result_json"]) or {}).get("conversation_id")
+        return value if isinstance(value, str) else None
+    except (TypeError, ValueError):
+        return None
+
+
 async def _sync(
     row: dict[str, Any],
     result: dict[str, Any],
@@ -152,13 +162,15 @@ async def generate(body: GenerateMusicRequest, response: Response, request: Requ
             try:
                 result = await client.poll(
                     remote["provider_job_id"],
+                    project_id=remote.get("project_id"),
                     timeout=body.wait_timeout_s,
                 )
             except FlowMusicError as exc:
-                if exc.status_code != 504:
+                if exc.status_code not in {401, 403, 504}:
                     raise
-                # The remote generation continues. Return its local id so the
-                # caller can resume polling instead of losing track of the job.
+                # Once Flow Music accepted the generation, a temporary auth
+                # failure while polling must not make the create request look
+                # failed. Return the local id so polling can resume later.
                 response.status_code = 202
                 return _result_from_row(row, remote, base_url)
             response.status_code = 200
@@ -190,7 +202,11 @@ async def get_job(job_id: str, request: Request, refresh: bool = True):
     try:
         return await _sync(
             row,
-            await client.get_job(row["provider_job_id"]),
+            await client.get_job(
+                row["provider_job_id"],
+                project_id=row.get("project_id"),
+                conversation_id=_stored_conversation_id(row),
+            ),
             base_url,
         )
     except FlowMusicError as exc:
@@ -213,7 +229,12 @@ async def poll_job(
     try:
         return await _sync(
             row,
-            await client.poll(row["provider_job_id"], timeout=timeout_s),
+            await client.poll(
+                row["provider_job_id"],
+                project_id=row.get("project_id"),
+                conversation_id=_stored_conversation_id(row),
+                timeout=timeout_s,
+            ),
             base_url,
         )
     except FlowMusicError as exc:

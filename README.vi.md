@@ -24,7 +24,7 @@ trong SQLite.
 ## Tính năng
 
 - API tạo nhạc chỉ cần prompt, có tùy chọn chờ đồng bộ.
-- Theo dõi cả hai biến thể của Flow Music và trả link M4A/WAV đầy đủ.
+- Theo dõi một hoặc hai biến thể của Flow Music và trả link M4A/WAV đầy đủ.
 - Dùng tài khoản và credits từ Chrome session đã đăng nhập.
 - Giữ thông tin xác thực bên trong page context của Flow Music.
 - Lưu trạng thái generation cục bộ bằng SQLite.
@@ -102,7 +102,8 @@ Project đọc cấu hình từ các biến môi trường:
 | `FLOWMUSIC_REQUEST_TIMEOUT` | `90` | Timeout request trình duyệt, tính bằng giây |
 | `FLOWMUSIC_POLL_INTERVAL` | `5` | Khoảng cách giữa các lần kiểm tra trạng thái |
 | `FLOWMUSIC_POLL_TIMEOUT` | `900` | Thời gian chờ đồng bộ tối đa mặc định |
-| `FLOWMUSIC_EXPECTED_CLIPS` | `2` | Số biến thể mong đợi cho mỗi prompt |
+| `FLOWMUSIC_AUTH_RETRY_LIMIT` | `3` | Số lần retry refresh xác thực liên tiếp khi poll |
+| `FLOWMUSIC_EXPECTED_CLIPS` | `2` | Số biến thể tối đa dùng để hoàn tất sớm |
 
 Chrome extension hiện kết nối tới port `8123`. Nếu đổi `PORT`, cần cập nhật cả
 `AGENT_WS_URL` và localhost permission trong folder `extension/`.
@@ -138,10 +139,11 @@ Response trả `id` cục bộ. Poll job:
 curl http://127.0.0.1:8123/api/jobs/JOB_ID
 ```
 
-Flow Music mặc định tạo hai biến thể cho mỗi prompt. API theo dõi cả hai
-operation và trả hai phần tử trong `clips`, mỗi phần tử có link M4A và WAV
-riêng. Số lượng mong đợi mặc định là `FLOWMUSIC_EXPECTED_CLIPS=2` và có thể đổi
-qua biến môi trường nếu hành vi của Flow Music thay đổi.
+Flow Music thường tạo tối đa hai biến thể cho mỗi prompt, nhưng một số request
+chỉ tạo một bản. API trả mọi biến thể đã tạo trong `clips`, mỗi phần tử có link
+M4A và WAV riêng. Job hoàn tất sớm khi đủ số bản kỳ vọng, hoặc khi Flow Music đã
+finalize stream và mọi operation nhận được đều kết thúc.
+`FLOWMUSIC_EXPECTED_CLIPS` mặc định là `2`.
 
 ### Chờ hoàn thành ngay trong request tạo nhạc
 
@@ -188,6 +190,18 @@ Các endpoint chính:
 - `GET /api/jobs/{id}`
 - `POST /api/jobs/{id}/poll`
 - `GET /api/jobs/{id}/download?format=m4a|wav`
+
+## Xử lý lỗi xác thực
+
+Khi Flow Music trả về `401` hoặc `403`, bridge sẽ reload tab Flow Music đã đăng
+nhập một lần để ứng dụng first-party refresh access token, sau đó tự retry
+request. Nếu lần retry vẫn không được xác thực, hãy mở tab đó và đăng nhập lại;
+refresh session đã hết hạn hoặc bị thu hồi.
+
+Nếu Flow Music đã chấp nhận yêu cầu tạo nhạc, lỗi xác thực tạm thời trong lúc
+chờ đồng bộ sẽ trả job đã lưu dưới dạng `202 pending` thay vì làm request tạo
+nhạc thất bại. Tiếp tục bằng `GET /api/jobs/{id}` hoặc
+`POST /api/jobs/{id}/poll`.
 
 ## Kiểm tra và phát triển
 
